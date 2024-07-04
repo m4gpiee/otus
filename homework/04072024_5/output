@@ -1,0 +1,21 @@
+Starting process 1 with ionice class 2...
+Starting process 2 with ionice class 3...
+Process 1 completed.
+Process 2 completed.
+Log for Process 1:
+1000+0 записей получено
+1000+0 записей отправлено
+1048576000 байт (1,0 GB, 1000 MiB) скопирован, 0,314215 s, 3,3 GB/s
+
+real	0m0,317s
+user	0m0,000s
+sys	0m0,088s
+Log for Process 2:
+1000+0 записей получено
+1000+0 записей отправлено
+1048576000 байт (1,0 GB, 1000 MiB) скопирован, 0,608049 s, 1,7 GB/s
+
+real	0m0,611s
+user	0m0,000s
+sys	0m0,082s
+Done.
