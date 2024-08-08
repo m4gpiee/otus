@@ -8,6 +8,7 @@
 
 Запускаем создание docker образа:
 
+```
  docker build .
 [+] Building 5.5s (9/9) FINISHED                                                                                                                                                                    docker:default
  => [internal] load build definition from Dockerfile                                                                                                                                                          0.0s
@@ -30,25 +31,35 @@
  => exporting to image                                                                                                                                                                                        0.0s 
  => => exporting layers                                                                                                                                                                                       0.0s 
  => => writing image sha256:014ec3fdfc176c77aac2a3a46c4cd18c1790c2faecb2dda89d124b280702370d                                                                                                                  0.0s 
-
+```
 
 Проверяем, что образ создался:
+
+```
  docker image ls
 REPOSITORY   TAG       IMAGE ID       CREATED         SIZE
 <none>       <none>    014ec3fdfc17   4 seconds ago   13.6MB
+```
 
 Запускаем контейнер, указывая порты как "локальный_порт:порт_в_докере":
+
+```
  docker run -d -p 80:80 014ec3fdfc17
+```
 
 Проверяем, что контейнер запустился:
+
+```
  docker ps
 CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS                               NAMES
 38ece6ae257c   014ec3fdfc17   "nginx -g 'daemon of…"   4 seconds ago   Up 3 seconds   0.0.0.0:80->80/tcp, :::80->80/tcp   strange_elbakyan
+```
 
 Проверяем, что web сервер работает:
- curl 127.0.0.1
-Artem's custom index page
 
+``` curl 127.0.0.1
+Artem's custom index page
+```
 
 Выводы и ответы на вопросы:
 
