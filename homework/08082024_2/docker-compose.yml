@@ -1,0 +1,62 @@
+version: '3.9'
+
+services:
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus:/etc/prometheus/
+    container_name: prometheus
+    hostname: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Moscow"
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana
+    user: root
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    container_name: grafana
+    hostname: grafana
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Moscow"
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_LOG_FILTERS: rendering:debug
+    networks:
+      - monitoring
+  renderer:
+    container_name: grafana-image-renderer
+    image: grafana/grafana-image-renderer:latest
+    restart: unless-stopped
+    ports:
+      - 8081:8081
+    environment:
+      - ENABLE_METRICS=true
+      - RENDERING_MODE=clustered
+      - RENDERING_CLUSTERING_MODE=context
+      - RENDERING_CLUSTERING_MAX_CONCURRENCY=6
+    networks:
+      - monitoring
+networks:
+  monitoring:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+          ip_range: 172.28.0.0/24
+          gateway: 172.28.0.1
