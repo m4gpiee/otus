@@ -1,0 +1,41 @@
+
+MACHINES = {
+  :"pam" => {
+              :box_name => "ubuntu/jammy64",
+              :cpus => 2,
+              :memory => 1024,
+              :ip => "192.168.57.10",
+            }
+}
+
+Vagrant.configure("2") do |config|
+  MACHINES.each do |boxname, boxconfig|
+    config.vm.synced_folder ".", "/vagrant", disabled: true
+    config.vm.network "private_network", ip: boxconfig[:ip]
+    config.vm.provision "file", source: "login.sh", destination: "/tmp/"
+    config.vm.define boxname do |box|
+      box.vm.box = boxconfig[:box_name]
+      box.vm.box_version = boxconfig[:box_version]
+      box.vm.host_name = boxname.to_s
+
+      box.vm.provider "virtualbox" do |v|
+        v.memory = boxconfig[:memory]
+        v.cpus = boxconfig[:cpus]
+      end
+
+      box.vm.provision "shell", inline: <<-SHELL
+          sudo useradd otusadm && sudo useradd otus
+          echo "otusadm:Otus2022!" | sudo chpasswd && echo "otus:Otus2022!" | sudo chpasswd
+          sudo groupadd -f admin
+          sudo usermod otusadm -a -G admin
+          sudo usermod root -a -G admin
+          sudo usermod vagrant -a -G admin
+          mv /tmp/login.sh /usr/local/bin
+          sudo chmod +x /usr/local/bin/login.sh
+          /bin/sed -ie "s/#PasswordAuthentication yes/PasswordAuthentication yes/g"  /etc/ssh/sshd_config
+          /bin/sed -ie "s/KbdInteractiveAuthentication no/KbdInteractiveAuthentication yes/g"  /etc/ssh/sshd_config
+          systemctl restart sshd.service
+      SHELL
+    end
+  end
+end
