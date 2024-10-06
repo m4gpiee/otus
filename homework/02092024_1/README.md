@@ -25,10 +25,17 @@ VM2:
 
 
 # Инициализируем репозиторий borg на backup сервере с client сервера:
+```
 borg init --encryption=repokey borg@192.168.56.160:/opt/backup
+```
+
 # Запускаем для проверки бекапа:
+```
 borg create --stats --list borg@192.168.56.160:/opt/backup/::"etc-{now:%Y-%m-%d_%H:%M:%S}" /etc
+```
+
 # Проверяем:
+```
 $ borg list borg@192.168.56.160:/opt/backup
 etc-2024-10-06_15:43:31              Sun, 2024-10-06 15:43:32 [0589a7b0154ffd7e1fb151e7433d8680aeb7e5edfb770e5631824319a55aeb35]
 $ borg list borg@192.168.56.160:/opt/backup::etc-2024-10-06_15:43:31
@@ -39,8 +46,11 @@ lrwxrwxrwx root   root         39 Fri, 2024-02-16 21:44:25 etc/resolv.conf -> ..
 lrwxrwxrwx root   root         13 Tue, 2023-12-05 08:15:51 etc/rmt -> /usr/sbin/rmt
 lrwxrwxrwx root   root         23 Fri, 2024-02-16 21:46:20 etc/vtrgb -> /etc/alternatives/vtrgb
 drwxr-xr-x root   root          0 Fri, 2024-02-16 21:51:28 etc/ModemManager
+```
+
 ...
 # Достаем файл из бекапа:
+```
 $ borg extract borg@192.168.56.160:/opt/backup/::etc-2024-10-06_15:43:31 etc/hostname
 $ pwd
 /var/backup
@@ -59,9 +69,11 @@ $ pwd
 $ cat etc/hostname
 client
 $ exit
+```
 
 
 # Процесс создания бекапов автоматизирован с помощью systemd. 
+```
 cat /etc/systemd/system/borg-backup.service
 [Unit]
 Description=Automated Borg Backup
@@ -73,8 +85,10 @@ ExecStart=/etc/borg-backup.sh
 
 [Install]
 WantedBy=multi-user.target
+```
 
 
+```
 cat /etc/borg-backup.sh 
 #!/usr/bin/env bash
 # the envvar $REPONAME is something you should just hardcode
@@ -110,10 +124,12 @@ borg list $REPOSITORY
 # Unset the password
 export BORG_PASSPHRASE=""
 exit
+```
 
 
 
 # Проверку работы можно выполнить следующим образом:
+```
 $ borg list borg@192.168.56.160:/opt/backup
 etc-2024-10-06_15:43:31              Sun, 2024-10-06 15:43:32 [0589a7b0154ffd7e1fb151e7433d8680aeb7e5edfb770e5631824319a55aeb35]
 client-2024-10-06_16:00:10           Sun, 2024-10-06 16:00:11 [b35bed3f22945e1ddce7c55daf494cf99ea8458f98c711ae308dc7d3d9b74adf]
@@ -121,5 +137,6 @@ client-2024-10-06_16:00:55           Sun, 2024-10-06 16:01:02 [bb894ab0a48ec311b
 $ exit
 vagrant@client:/etc$ systemctl list-timers --all | grep borg
 Sun 2024-10-06 16:05:00 MSK 3min 8s left  Sun 2024-10-06 16:00:03 MSK 1min 47s ago         borg-backup.timer            borg-backup.service
+```
 
-Дополнительно, в репозиторий включены скриншоты.
+# Дополнительно, в репозиторий включены скриншоты.
