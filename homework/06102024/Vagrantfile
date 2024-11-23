@@ -1,0 +1,144 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+MACHINES = {
+  :inetRouter => {
+    :box_name => "bento/ubuntu-22.04",
+    :public => { bridge: 'enp0s3', ip: '192.168.0.17' },  # Включаем публичный интерфейс
+    :net => [
+      {type: 'private_network', ip: '192.168.255.1', netmask: '255.255.255.252', intnet: "router-net"}
+    ]
+  },
+  :centralRouter => {
+    :box_name => "bento/ubuntu-22.04",
+    :net => [
+      {type: 'private_network', ip: '192.168.255.2', netmask: '255.255.255.252', intnet: "router-net"},
+      {type: 'private_network', ip: '192.168.0.1', netmask: '255.255.255.240', intnet: "dir-net"},
+      {type: 'private_network', ip: '192.168.0.33', netmask: '255.255.255.240', intnet: "hw-net"},
+      {type: 'private_network', ip: '192.168.0.65', netmask: '255.255.255.192', intnet: "mgt-net"}
+    ]
+  },
+  :centralServer => {
+    :box_name => "bento/ubuntu-22.04",
+    :net => [
+      {type: 'private_network', ip: '192.168.0.2', netmask: '255.255.255.240', intnet: "dir-net"}
+    ]
+  },
+  :office1Router => {
+    :box_name => "bento/ubuntu-22.04",
+    :net => [
+      {type: 'private_network', ip: '192.168.254.2', netmask: '255.255.255.252', intnet: "router-net"},
+      {type: 'private_network', ip: '192.168.2.1', netmask: '255.255.255.192', intnet: "dev-office1-net"},
+      {type: 'private_network', ip: '192.168.2.65', netmask: '255.255.255.192', intnet: "testservers-office1-net"},
+      {type: 'private_network', ip: '192.168.2.129', netmask: '255.255.255.192', intnet: "managers-net"},
+      {type: 'private_network', ip: '192.168.2.193', netmask: '255.255.255.192', intnet: "hardware-office1-net"}
+    ]
+  },
+  :office1Server => {
+    :box_name => "bento/ubuntu-22.04",
+    :net => [
+      {type: 'private_network', ip: '192.168.2.2', netmask: '255.255.255.192', intnet: "dev-office1-net"}
+    ]
+  },
+  :office2Router => {
+    :box_name => "bento/ubuntu-22.04",
+    :net => [
+      {type: 'private_network', ip: '192.168.253.2', netmask: '255.255.255.252', intnet: "router-net"},
+      {type: 'private_network', ip: '192.168.1.1', netmask: '255.255.255.128', intnet: "dev-office2-net"},
+      {type: 'private_network', ip: '192.168.1.129', netmask: '255.255.255.192', intnet: "testservers-office2-net"},
+      {type: 'private_network', ip: '192.168.1.193', netmask: '255.255.255.192', intnet: "hardware-office2-net"}
+    ]
+  },
+  :office2Server => {
+    :box_name => "bento/ubuntu-22.04",
+    :net => [
+      {type: 'private_network', ip: '192.168.1.2', netmask: '255.255.255.128', intnet: "dev-office2-net"}
+    ]
+  }
+}
+
+Vagrant.configure("2") do |config|
+  if Vagrant.has_plugin? "vagrant-vbguest"
+    config.vbguest.no_install = true
+    config.vm.network "public_network", bridge: "enp0s3"
+  end
+
+  MACHINES.each do |boxname, boxconfig|
+    config.vm.define boxname do |box|
+      box.vm.box = boxconfig[:box_name]
+      box.vm.host_name = boxname.to_s
+
+      # Конфигурируем приватные сети
+      boxconfig[:net].each do |ipconf|
+        box.vm.network ipconf[:type], ip: ipconf[:ip], virtualbox__intnet: ipconf[:intnet]
+      end
+
+      # Если машина имеет публичный интерфейс
+      if boxconfig.key?(:public)
+        box.vm.network "public_network", bridge: boxconfig[:public][:bridge], ip: boxconfig[:public][:ip]
+      end
+
+      # Общая настройка для всех машин: копирование SSH ключей
+      box.vm.provision "shell", inline: <<-SHELL
+        mkdir -p ~root/.ssh
+        cp ~vagrant/.ssh/auth* ~root/.ssh
+      SHELL
+
+      # Установка основных пакетов и подготовка маршрутизации
+      box.vm.provision "shell", run: "always", inline: <<-SHELL
+        sudo apt update
+        sudo apt install -y traceroute
+      SHELL
+
+      # Специфичные конфигурации для каждой машины
+      case boxname.to_s
+      when "inetRouter"
+        box.vm.provision "shell", run: "always", inline: <<-SHELL
+          sudo bash -c 'echo "net.ipv4.conf.all.forwarding=1" >> /etc/sysctl.conf'
+          sudo sysctl -p
+          sudo iptables -F
+          sudo iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE
+          sudo bash -c 'ip route add 192.168.0.0/16 via 192.168.255.2'
+        SHELL
+      when "centralRouter"
+        box.vm.provision "shell", run: "always", inline: <<-SHELL
+          sudo bash -c 'echo "net.ipv4.conf.all.forwarding=1" >> /etc/sysctl.conf'
+          sudo sysctl -p
+          sudo ip route delete default
+          sudo ip a add 192.168.254.1/30 dev eth2
+          sudo ip a add 192.168.253.1/30 dev eth3
+          sudo ip route add default via 192.168.255.1
+        SHELL
+      when "centralServer"
+        box.vm.provision "shell", run: "always", inline: <<-SHELL
+          sudo ip route delete default
+          sudo ip route add default via 192.168.0.1
+        SHELL
+      when "office1Router"
+        box.vm.provision "shell", run: "always", inline: <<-SHELL
+          sudo bash -c 'echo "net.ipv4.conf.all.forwarding=1" >> /etc/sysctl.conf'
+          sudo sysctl -p
+          sudo ip route delete default
+          sudo ip route add default via 192.168.254.1
+        SHELL
+      when "office1Server"
+        box.vm.provision "shell", run: "always", inline: <<-SHELL
+          sudo ip route delete default
+          sudo ip route add default via 192.168.2.1
+        SHELL
+      when "office2Router"
+        box.vm.provision "shell", run: "always", inline: <<-SHELL
+          sudo bash -c 'echo "net.ipv4.conf.all.forwarding=1" >> /etc/sysctl.conf'
+          sudo sysctl -p
+          sudo ip route delete default
+          sudo ip route add default via 192.168.253.1
+        SHELL
+      when "office2Server"
+        box.vm.provision "shell", run: "always", inline: <<-SHELL
+          sudo ip route delete default
+          sudo ip route add default via 192.168.1.1
+        SHELL
+      end
+    end
+  end
+end
