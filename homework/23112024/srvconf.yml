@@ -1,0 +1,164 @@
+---
+- name: ConfigInetRouter
+  hosts: inetRouter
+  become: true
+
+  tasks:
+    - name: install Services
+      yum:
+        name:
+        - vim  
+        - iptables
+        - tcpdump
+        - net-tools  
+        - iptables-services
+        - traceroute
+        - nmap  
+        state: present
+        update_cache: true
+
+    - name: Set ip forwarding = 1
+      sysctl:
+        name: net.ipv4.conf.all.forwarding
+        value: 1
+        sysctl_set: yes
+        state: present
+        reload: yes
+
+    - name: iptables config copy
+      copy:
+        src: port_knocking-rules
+        dest: /etc/iptables_inetrouter.rules
+        owner: root
+        group: root
+        mode: 0644
+
+
+
+
+
+
+
+- name: ConfigInetRouter2
+  hosts: inetRouter2
+  become: true
+
+  tasks:
+    - name: install Services
+      yum:
+        name:
+        - vim
+        - iptables
+        - tcpdump
+        - net-tools
+        - iptables-services
+        - traceroute
+        - nmap  
+        state: present
+        update_cache: true
+
+    - name: Set ip forwarding = 1
+      sysctl:
+        name: net.ipv4.conf.all.forwarding
+        value: 1
+        sysctl_set: yes
+        state: present
+        reload: yes
+   
+    - name: iptables config copy
+      copy:
+        src: msk-rules
+        dest: /etc/iptables_inetrouter.rules
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: disable default route
+      ansible.builtin.lineinfile:
+       path: /etc/sysconfig/network-scripts/ifcfg-eth0
+       line: DEFROUTE=no
+
+    - name: default route
+      ansible.builtin.shell: |
+        echo "GATEWAY=192.168.255.1" >> /etc/sysconfig/network-scripts/ifcfg-eth1         
+
+
+
+
+- name: ConfigcentralRouter
+  hosts: centralRouter
+  become: true
+
+  tasks:
+    - name: install Services
+      yum:
+        name:
+        - vim
+        - iptables
+        - tcpdump
+        - net-tools
+        - iptables-services
+        - traceroute
+        - nmap  
+        state: present
+        update_cache: true
+
+    - name: Set ip forwarding = 1
+      sysctl:
+        name: net.ipv4.conf.all.forwarding
+        value: 1
+        sysctl_set: yes
+        state: present
+        reload: yes
+
+
+- name: ConfigcentralServer
+  hosts: centralServer
+  become: true
+
+  tasks:
+
+
+  
+
+
+    - name: Enable EPEL Repository on CentOS 7
+      yum:
+       name: epel-release
+       state: latest
+
+    - name: install Services
+      yum:
+        name:
+        - vim
+        - iptables
+        - tcpdump
+        - net-tools
+        - iptables-services
+        - traceroute
+        - nmap
+        - nginx  
+        state: present
+        update_cache: true
+
+
+    - name: change config
+      ansible.builtin.lineinfile:
+       path: /usr/share/nginx/html/index.html
+       line: 'Check mapping inetRouter2:8080 to centralServer:80 success!'
+
+    - name: start nginx
+      service: 
+        name: nginx
+        state: started
+        enabled: yes
+
+
+    - name: disable default route
+      ansible.builtin.lineinfile:
+       path: /etc/sysconfig/network-scripts/ifcfg-eth0
+       line: DEFROUTE=no
+
+    - name: default route
+      ansible.builtin.shell: |
+        echo "GATEWAY=192.168.0.1" >> /etc/sysconfig/network-scripts/ifcfg-eth1
