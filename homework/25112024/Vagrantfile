@@ -1,0 +1,57 @@
+MACHINES = {
+  :router1  => {
+        :box_name => "generic/ubuntu2204",
+        :vm_name => "router1",
+        :net => [   
+                  ["10.100.10.1", 2, "255.255.255.252", "r1-r2"],
+                  ["10.100.12.1", 3, "255.255.255.252", "r1-r3"],
+                  ["192.168.10.1", 4, "255.255.255.0", "net1"],
+                  ["192.168.55.10", 5, "255.255.255.0", "ansible"],
+
+                ]
+  },
+  :router2  => {
+        :box_name => "generic/ubuntu2204",
+        :vm_name => "router2",
+        :net => [   
+                  ["10.100.10.2", 2, "255.255.255.252", "r1-r2"],
+                  ["10.100.11.2", 3, "255.255.255.252", "r2-r3"],
+                  ["192.168.20.1", 4, "255.255.255.0", "net2"],
+                  ["192.168.55.11", 5, "255.255.255.0", "ansible"],
+                ]
+  },
+
+  :router3 => {
+        :box_name => "generic/ubuntu2204",
+        :vm_name => "router3",
+        :net => [
+                  ["10.100.11.1", 2, "255.255.255.252", "r2-r3"],
+                  ["10.100.12.2", 3, "255.255.255.252", "r1-r3"],
+                  ["192.168.30.1", 4, "255.255.255.0", "net3"],
+                  ["192.168.55.12", 5, "255.255.255.0", "ansible"],
+                ]
+  }
+}
+
+Vagrant.configure("2") do |config|
+  if Vagrant.has_plugin? "vagrant-vbguest"
+    config.vbguest.no_install  = true
+  end
+  MACHINES.each do |boxname, boxconfig|
+    config.vm.define boxname do |box|
+      box.vm.box = boxconfig[:box_name]
+      box.vm.host_name = boxconfig[:vm_name]
+      if boxconfig[:vm_name] == "router3"
+       box.vm.provision "ansible" do |ansible|
+        ansible.playbook = "ansible/provision.yml"
+        ansible.inventory_path = "ansible/hosts"
+        ansible.host_key_checking = "false"
+        ansible.limit = "all"
+       end
+      end
+      boxconfig[:net].each do |ipconf|
+        box.vm.network("private_network", ip: ipconf[0], adapter: ipconf[1], netmask: ipconf[2], virtualbox__intnet: ipconf[3])
+      end
+    end
+  end
+end
