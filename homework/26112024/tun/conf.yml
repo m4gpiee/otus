@@ -1,0 +1,79 @@
+---
+- name: ConfigcentralRouter
+  hosts: all
+  become: true
+
+
+  tasks:
+    - name: Update apt repo and cache on all Debian/Ubuntu boxes
+      apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+    - name: install Services
+      apt:
+        name:
+        - openvpn
+        - iperf3
+        - vim 
+    - name: reboot
+      ansible.builtin.reboot:
+        reboot_timeout: 3600     
+
+- name: ConfigServer1
+  hosts: server
+  become: true
+
+  tasks:
+   
+    - name: copy key
+      copy:
+        src: static.key
+        dest: /etc/openvpn/static.key
+        owner: root
+        group: root
+        mode: 644   
+    
+    - name: copy config
+      copy:
+        src: server.conf
+        dest: /etc/openvpn/server.conf
+        owner: root
+        group: root
+        mode: 644   
+
+    - name: copy service file
+      copy:
+        src: openvpn@.service
+        dest: /etc/systemd/system/openvpn@.service
+        owner: root
+        group: root
+        mode: 644   
+
+
+- name: ConfigClient
+  hosts: client
+  become: true
+
+  tasks:
+
+    - name: copy key
+      copy:
+        src: static.key
+        dest: /etc/openvpn/static.key
+        owner: root
+        group: root
+        mode: 644
+
+    - name: copy config
+      copy:
+        src: client.conf
+        dest: /etc/openvpn/server.conf
+        owner: root
+        group: root
+        mode: 644
+
+    - name: copy service file
+      copy:
+        src: openvpn@.service
+        dest: /etc/systemd/system/openvpn@.service
+        owner: root
+        group: root
+        mode: 644

@@ -1,0 +1,23 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+  - name: Update apt repo and cache on all Debian/Ubuntu boxes
+    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+  - name: install packages
+    apt: name={{ item }} state=present
+    with_items:
+      - openvpn
+      - traceroute
+      - vim
+      - tcpdump
+      - iperf3
+
+  - name: copy server keys
+    copy: src=keys dest=/etc/openvpn owner=root group=root mode=0600
+
+  - name: copy openvpn configuration file
+    copy: src=ras.conf.j2 dest=/etc/openvpn/server.conf owner=root group=root mode=0644
+
+  - name: openvpn start
+    service: name=openvpn@server state=started enabled=yes

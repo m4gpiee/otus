@@ -1,0 +1,25 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  if Vagrant.has_plugin? "vagrant-vbguest"
+    config.vbguest.no_install  = true
+  end
+  config.vm.box = "ubuntu/jammy64"
+  config.vm.provider "virtualbox" do |v|
+	  v.memory = 2048
+  end
+
+  config.vm.define "ras" do |ras|
+    ras.vm.network "private_network", ip: "192.168.56.10", virtualbox__intnet: "ras"
+    ras.vm.network "private_network", ip: "192.168.11.20", virtualbox__intnet: "kek"
+    ras.vm.hostname = "ras"
+  end
+
+  config.vm.provision "ansible" do |ansible|
+    ansible.verbose = "vvv"
+    ansible.playbook = "provisioning/playbook.yml"
+    ansible.become = "true"
+  end
+
+end

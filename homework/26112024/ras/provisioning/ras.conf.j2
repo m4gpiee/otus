@@ -1,0 +1,21 @@
+proto udp
+port 1194
+dev tun
+server 10.10.10.0 255.255.255.0
+topology subnet
+persist-key
+persist-tun
+keepalive 10 60
+client-to-client
+
+dh              /etc/openvpn/keys/dh.pem
+ca              /etc/openvpn/keys/ca.crt
+cert            /etc/openvpn/keys/vpn-server.crt
+key             /etc/openvpn/keys/vpn-server.key
+crl-verify      /etc/openvpn/keys/crl.pem
+
+verb 5
+daemon
+log-append /var/log/openvpn.log
+status /var/run/openvpn.status 3
+push "route 172.16.10.0 255.255.255.0"
