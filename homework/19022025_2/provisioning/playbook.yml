@@ -1,0 +1,158 @@
+- name: Base set up
+  hosts: all
+  #Выполнять действия от root-пользователя
+  become: yes
+  tasks:
+  #Установка текстового редактора Vim и chrony
+  - name: install softs on CentOS
+    ansible.builtin.yum:
+      name:
+        - vim
+        - chrony
+      state: present
+      update_cache: true
+  
+  #Включение firewalld 
+  - name: disable firewalld
+    service:
+      name: firewalld
+      state: started
+      enabled: true  
+
+
+
+
+# Открываем нужные порты
+  - name: allow freeipa network activity
+    firewalld:
+      service: "{{ item }}"
+      permanent: yes
+      immediate: yes
+      state: enabled
+    loop:
+      - ntp
+      - http
+      - https
+      - ldap
+      - ldaps
+      - kerberos
+      - kpasswd
+      - dns
+
+
+  #Отключение SElinux из автозагрузки
+  #Будет применено после перезагрузки
+  - name: disable SElinux
+    selinux:
+      state: disabled
+  
+  #Отключение SElinux до перезагрузки
+  - name: disable SElinux now
+    shell: setenforce 0
+
+  #Установка временной зоны Европа/Москва    
+  - name: Set up timezone
+    timezone:
+      name: "Europe/Moscow"
+  
+  #Запуск службы Chrony, добавление её в автозагрузку
+  - name: enable chrony
+    service:
+      name: chronyd
+      state: restarted
+      enabled: true
+  
+  #Копирование файла /etc/hosts c правами root:root 0644
+  - name: change /etc/hosts
+    ansible.builtin.copy:
+      src: hosts
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+  
+#Установка клиента Freeipa
+#  - name: install module ipa-client
+#    ansible.builtin.yum:
+#      name:
+#        - freeipa-client
+#      state: present
+#      update_cache: true
+
+- name: Config IPA Server
+  hosts: ipa.otus.lan
+  become: yes
+  tasks:
+
+  - name: Upgrade nss
+    ansible.builtin.yum:
+      name: 'nss'
+      state: latest
+
+  - name: install packages
+    ansible.builtin.yum:
+      name:
+        - ipa-server
+        - ipa-server-dns  
+
+
+
+  - name: delete freeipa-server config
+    command: |
+      ipa-server-install -U \
+      --uninstall \
+
+  - name: configure freeipa
+    command: |
+      ipa-server-install -U \
+      -r OTUS.LAN \
+      -n otus.lan \
+      -p otusotus \
+      -a otusotus \
+      --hostname=ipa.otus.lan \
+      --ip-address=192.168.57.10 \
+      --mkhomedir \
+      --no-ntp \
+
+
+  - ipa_user:
+      name: tester1
+      givenname: Dmitry
+      sn: Tester
+      password: testtest
+      loginshell: /bin/bash
+      ipa_host: ipa.otus.lan
+      ipa_user: admin
+      ipa_pass: otusotus
+
+        
+
+- name: Config Clients
+  hosts: client1.otus.lan,client2.otus.lan
+  become: yes
+  tasks:
+
+  - name: Upgrade nss client
+    ansible.builtin.yum:
+      name: 'nss'
+      state: latest
+#Установка клиента Freeipa
+  - name: install module ipa-client
+    ansible.builtin.yum:
+      name:
+        - freeipa-client
+      state: present
+      update_cache: true
+
+
+
+  - name: configure ipa-client
+    command: |
+      ipa-client-install -U \
+      --principal admin@OTUS.LAN \
+      --password otusotus \
+      --server ipa.otus.lan \
+      --domain otus.lan \
+      --realm OTUS.LAN \
+      --mkhomedir \
+      --force-join

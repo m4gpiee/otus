@@ -1,0 +1,129 @@
+---
+#Отключение SElinux до перезагрузки
+- name: disable SElinux now
+  shell: setenforce 0
+
+#Установка временной зоны Европа/Москва
+- name: Set up timezone
+  timezone:
+    name: "Europe/Moscow"
+
+#Включение firewalld
+- name: enable firewalld
+  service:
+   name: firewalld
+   state: started
+   enabled: true   
+
+
+
+# Открываем нужные порты
+- name: allow ports 
+  firewalld:
+   port: "{{ item }}"
+   permanent: yes
+   immediate: yes
+   state: enabled
+  loop:
+   - 3306/tcp
+   - 22/tcp
+   - 53/tcp
+
+
+
+- name: Add Percona
+  yum:
+    name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+    state: present
+
+- name: Install Percona
+  yum:
+    name:
+      - Percona-Server-server-57
+      - percona-toolkit
+      - percona-xtrabackup
+      - MySQL-python
+    state: present
+
+- name: Copy configs
+  copy:
+    src: "{{ item }}"
+    dest: /etc/my.cnf.d/
+  with_fileglob: "*.cnf"
+
+- name: Stop MySQL
+  service:
+    name: mysqld
+    state: stopped
+
+#Отключаем проверку разрешений
+- name: Set vars
+  command: systemctl set-environment MYSQLD_OPTS="--skip-grant-tables"
+
+- name: Start MySQL
+  service:
+    name: mysqld
+    state: started
+
+#обновляем пароль пароль      
+- name: Sql query
+  command:  mysql -u root --execute="UPDATE mysql.user SET authentication_string = PASSWORD('{{ mysql_root_password }}') WHERE User = 'root' AND Host = 'localhost';"
+
+
+#перечитываем привелегии    
+- name: Sql query flush
+  command:  mysql -u root --execute="FLUSH PRIVILEGES"
+
+- name: Stop MySQL
+  service:
+    name: mysqld
+    state: stopped
+
+- name: Unset vars
+  command: systemctl unset-environment MYSQLD_OPTS
+
+- name: Start MySQL
+  service:
+    name: mysqld
+    state: started
+    enabled: yes
+
+- name: Copy .my.cnf file to the root folder
+  template:
+    src: root.my.cnf.j2
+    dest: /root/.my.cnf
+    owner: root
+    group: root
+    mode: 0600
+
+#Устанавливаем пароль     
+- name: Set root pass
+  command: mysql --connect-expired-password --batch --execute="{{ item }}"
+  with_items:
+    - ALTER USER 'root'@'localhost' IDENTIFIED BY '{{ mysql_root_password }}';
+
+- name: Create DB user with all privileges
+  mysql_user:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    name: "{{ replication_user }}"
+    password: "{{ replication_password }}"
+    host: '%'
+    priv: '*.*:ALL'
+    state: present
+
+- name: Create DB bet
+  mysql_db:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    name: bet
+    state: present
+
+#импортируем бд из файла
+- name: Import bet database
+  mysql_db:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    name: bet
+    state: import
+    target: /vagrant/ansible/bet.dmp
