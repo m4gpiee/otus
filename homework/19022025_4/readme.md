@@ -2125,10 +2125,10 @@ Processing xlog segments from file archival for pg
 
 ```text
 -- barman list-backup pg
-pg 20250218T192421 - Mon Nov 22 19:24:33 2021 - Size: 24.1 MiB - WAL Size: 0 B
-pg 20250218T192106 - Mon Nov 22 19:21:38 2021 - Size: 24.1 MiB - WAL Size: 48.2 KiB
-pg 20250218T191834 - Mon Nov 22 19:18:57 2021 - Size: 24.1 MiB - WAL Size: 48.2 KiB
-pg 20250218T191709 - Mon Nov 22 19:17:16 2021 - Size: 24.1 MiB - WAL Size: 32.2 KiB - OBSOLETE
+pg 20250218T192421 - Mon Nov 22 19:24:33 2025 - Size: 24.1 MiB - WAL Size: 0 B
+pg 20250218T192106 - Mon Nov 22 19:21:38 2025 - Size: 24.1 MiB - WAL Size: 48.2 KiB
+pg 20250218T191834 - Mon Nov 22 19:18:57 2025 - Size: 24.1 MiB - WAL Size: 48.2 KiB
+pg 20250218T191709 - Mon Nov 22 19:17:16 2025 - Size: 24.1 MiB - WAL Size: 32.2 KiB - OBSOLETE
 ```
 
 </details>
@@ -2424,7 +2424,7 @@ barman cron
 * * * * * export PATH=$PATH:/usr/pgsql-9.6/bin; barman cron >/dev/null 2>&1
 
  sudo su - barman
-Last login: Вт окт 26 19:42:21 UTC 2021 on pts/0
+Last login: Вт окт 26 19:42:21 UTC 2025 on pts/0
 -bash-4.2$ barman cron
 
 barman backup pg --wait
