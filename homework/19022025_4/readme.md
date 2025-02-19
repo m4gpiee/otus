@@ -2035,7 +2035,7 @@ TASK [../roles/barman_on_backup : barman check] ********************************
 changed: [backup]
 
 TASK [../roles/barman_on_backup : Store result of `barman check`] **************
-fatal: [backup -> localhost]: FAILED! => {"msg": "The task includes an option with an undefined variable. The error was: 'dict object' has no attribute 'item'\n\nThe error appears to be in '/home/b/pycharm_projects_2021_2/otus_linux/040/ansible/roles/barman_on_backup/tasks/main.yml': line 347, column 3, but may\nbe elsewhere in the file depending on the exact syntax problem.\n\nThe offending line appears to be:\n\n\n- name: Store result of `barman check`\n  ^ here\n"}
+fatal: [backup -> localhost]: FAILED! => {"msg": "The task includes an option with an undefined variable. The error was: 'dict object' has no attribute 'item'\n\nThe error appears to be in '/home/b/pycharm_projects_2025_2/otus_linux/040/ansible/roles/barman_on_backup/tasks/main.yml': line 347, column 3, but may\nbe elsewhere in the file depending on the exact syntax problem.\n\nThe offending line appears to be:\n\n\n- name: Store result of `barman check`\n  ^ here\n"}
 
 PLAY RECAP *********************************************************************
 backup                     : ok=14   changed=12   unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
@@ -2100,9 +2100,9 @@ Server pg:
 
 ```text
 -- barman backup pg
-Starting backup using postgres method for server pg in /var/lib/barman/pg/base/20211122T192421
+Starting backup using postgres method for server pg in /var/lib/barman/pg/base/20250218T192421
 Backup start at LSN: 0/C0000C8 (00000001000000000000000C, 000000C8)
-Starting backup copy via pg_basebackup for 20211122T192421
+Starting backup copy via pg_basebackup for 20250218T192421
 Copy done (time: 11 seconds)
 Finalising the backup.
 Backup size: 24.1 MiB
@@ -2125,10 +2125,10 @@ Processing xlog segments from file archival for pg
 
 ```text
 -- barman list-backup pg
-pg 20211122T192421 - Mon Nov 22 19:24:33 2021 - Size: 24.1 MiB - WAL Size: 0 B
-pg 20211122T192106 - Mon Nov 22 19:21:38 2021 - Size: 24.1 MiB - WAL Size: 48.2 KiB
-pg 20211122T191834 - Mon Nov 22 19:18:57 2021 - Size: 24.1 MiB - WAL Size: 48.2 KiB
-pg 20211122T191709 - Mon Nov 22 19:17:16 2021 - Size: 24.1 MiB - WAL Size: 32.2 KiB - OBSOLETE
+pg 20250218T192421 - Mon Nov 22 19:24:33 2021 - Size: 24.1 MiB - WAL Size: 0 B
+pg 20250218T192106 - Mon Nov 22 19:21:38 2021 - Size: 24.1 MiB - WAL Size: 48.2 KiB
+pg 20250218T191834 - Mon Nov 22 19:18:57 2021 - Size: 24.1 MiB - WAL Size: 48.2 KiB
+pg 20250218T191709 - Mon Nov 22 19:17:16 2021 - Size: 24.1 MiB - WAL Size: 32.2 KiB - OBSOLETE
 ```
 
 </details>
@@ -2486,10 +2486,10 @@ barman check pg
 barman backup pg &
 
  barman list-backup pg
-pg 20211118T211728 - STARTED
+pg 20250218T211728 - STARTED
 
 
-2025-02-19 21:17:28,604 [22577] barman.backup_executor INFO: Starting backup copy via pg_basebackup for 20211118T211728
+2025-02-19 21:17:28,604 [22577] barman.backup_executor INFO: Starting backup copy via pg_basebackup for 20250219T211728
 2025-02-19 21:17:28,959 [22086] barman.command_wrappers INFO: pg: pg_receivewal: finished segment at 0/13000000 (timeline 1)
 2025-02-19 21:17:29,751 [22086] barman.command_wrappers INFO: pg: pg_receivewal: finished segment at 0/14000000 (timeline 1)
 2025-02-19 21:18:02,705 [22591] barman.wal_archiver INFO: Found 2 xlog segments from streaming for pg. Archive all segments in one run.
@@ -2503,7 +2503,7 @@ pg 20211118T211728 - STARTED
 
 barman backps aux | grep backup
 barman   22893  0.5  8.1 263540 19696 pts/0    S    21:41   0:00 /usr/bin/python2 /bin/barman backup pg
-barman   22896  0.7  1.6 180800  3860 pts/0    S    21:41   0:00 /bin/pg_basebackup --dbname=dbname=replication host=192.168.40.10 options=-cdatestyle=iso replication=true user=streaming_barman application_name=barman_streaming_backup -v --no-password --pgdata=/var/lib/barman/pg/base/20211118T214107/data --no-slot --wal-method=none --checkpoint=fast
+barman   22896  0.7  1.6 180800  3860 pts/0    S    21:41   0:00 /bin/pg_basebackup --dbname=dbname=replication host=192.168.40.10 options=-cdatestyle=iso replication=true user=streaming_barman application_name=barman_streaming_backup -v --no-password --pgdata=/var/lib/barman/pg/base/20250219T214107/data --no-slot --wal-method=none --checkpoint=fast
 
 
 barman list-server
