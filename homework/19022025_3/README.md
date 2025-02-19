@@ -1,7 +1,7 @@
 
 ## Lesson43 MYSQL BACKUP
 
-<details>
+
 
 ### Задача
 
@@ -45,6 +45,6 @@ https://www.digitalocean.com/community/tutorials/how-to-reset-your-mysql-or-mari
 
 ![Image 1](Lesson43_mysql/slave2.jpg)
 
-</details>
+
 
 

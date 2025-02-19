@@ -2,7 +2,7 @@
 
 ## Lesson37 LDAP
 
-<details>
+
 
 ### Задача
 

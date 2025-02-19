@@ -1,9 +1,9 @@
-</details>
 
 
-## Lesson35 SPLITDNS
 
-<details>
+SPLITDNS
+
+
 
 ### Задача
 
@@ -102,7 +102,7 @@ key "tsig-key" {
         algorithm hmac-sha256;
         secret "FGSuvjlp+h0ZX97/OpNFQVPk0eB61OqvQ8/X+3ZjokE=";
 ```
-<details>
+
 Настраиваем acl и view
 
 
@@ -260,7 +260,7 @@ view "default" {
     };
 };
 ```
-</details>
+
 
 #### Проверка на client и client2
 
@@ -273,4 +273,4 @@ view "default" {
 
 
 
-</details>
+

@@ -1,6 +1,6 @@
 ## Lesson36  VLAN'ы,LACP
 
-<details>
+
 
 ### Задача
 
@@ -120,5 +120,5 @@ PING yandex.ru (5.255.255.70) 56(84) bytes of data.
 rtt min/avg/max/mdev = 8.347/8.482/8.618/0.163 ms
 ```
 
-</details>
+
 
