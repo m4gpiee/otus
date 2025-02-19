@@ -1,0 +1,161 @@
+---
+- name: Install PostgreSQL repo
+  yum:
+    name: http://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    state: present
+  tags:
+    - install-postgresql-repo
+    - install-postgresql
+    - deploy
+
+- name: Install PostgreSQL
+  yum:
+    name: postgresql13-server
+  tags:
+    - install-postgresqlyum search
+    - deploy
+
+- name: Uninstall PostgreSQL
+  yum:
+    name: postgresql13-server
+  tags:
+    - install-postgresql
+    - deploy
+
+- name: Remove PostgreSQL data dir
+  shell: rm -rf /var/lib/pgsql/13
+  tags:
+    - remove-postgresql-data-dir
+    - deploy
+
+- name: Create test database
+  postgresql_db:
+    name: test
+    encoding: UTF-8
+    template: template0
+
+- name: Create test database
+  postgresql_db:
+    name: user1
+    encoding: UTF-8
+    template: template0
+  tags:
+    - ansibled-postgresql
+
+#- name: Create replication user
+#  postgresql_user:
+#    db: user1
+#    name: user1
+#    password: user1
+#    role_attr_flags: REPLICATION
+#    priv: "CONNECT/products:ALL"
+#    expires: infinity
+#  tags:
+#    - ansibled-postgresql
+
+- name: Init PostgreSQL
+  shell: /usr/pgsql-13/bin/postgresql-13-setup initdb
+  tags:
+    - init-postgresql
+    - deploy
+
+- name: Collect-pg.conf-files
+  copy:
+    src: ../files/{{ item }}
+    dest: /var/lib/pgsql/13/data/{{ item }}
+  loop:
+    - pg_hba.conf
+    - postgresql.conf
+  tags:
+    - collect-pg.conf-files
+    - deploy
+  notify:
+    - restart-postgresql
+
+- name: Force restart PostgreSQL
+  systemd:
+    name: postgresql-13
+    state: restarted
+    enabled: true
+  tags:
+    - collect-pg.conf-files
+    - force-restart-postgresql
+    - deploy
+
+- name: download barman
+  get_url:
+    url: https://dl.2ndquadrant.com/default/release/get/13/rpm
+    dest: /home/vagrant/barman-repo.sh
+    mode: 0777
+  tags:
+    - download-barman
+    - deploy-barman
+
+- name: install barman-repo
+  shell: /home/vagrant/barman-repo.sh
+  args:
+    creates: /etc/yum.repos.d/2ndquadrant-dl-default-release-pg13.repo
+  tags:
+    - install-barman-repo
+    - deploy-barman
+
+- name: install barman
+  pip:
+    name:
+      - python2-dateutil
+    state: present
+  tags:
+    - install-by-pip
+
+- name: install barman
+  yum:
+    name:
+      - barman
+      - barman-cli
+    state: present
+  tags:
+    - install-barman
+    - deploy-barman
+
+- name: PostgreSQL init db
+  shell: /usr/pgsql-13/bin/postgresql-13-setup initdb
+  args:
+    creates: /var/lib/pgsql/13/data/postgresql.conf
+
+- name: Create PostgreSQL slot
+  become_user: postgres
+  shell: psql postgres -c "SELECT pg_create_physical_replication_slot('pg_slot_replication')"
+  tags:
+    - postgres-replication-init
+    - deploy
+
+#- name: Create PostgreSQL user
+#  become_user: postgres
+#  shell: psql postgres -c "CREATE USER test WITH ENCRYPTED PASSWORD 'test'; GRANT ALL PRIVILEGES ON DATABASE test TO test;"
+#  tags:
+#    - postgres-user-init
+#    - deploy
+
+- name: Create PostgreSQL replicator user
+  become_user: postgres
+  shell: psql postgres -c "CREATE USER replicator WITH REPLICATION PASSWORD 'replicator'"
+  tags:
+    - create-postgres-replication-user
+    - postgres-replication-init
+    - deploy
+
+#- name: Create PostgreSQL super barman user
+#  become_user: postgres
+#  shell: psql postgres -c "CREATE USER super_barman WITH SUPERUSER PASSWORD 'barman'"
+#  tags:
+#    - postgres-replication-init
+#    - deploy-barman
+#    - deploy
+#
+#- name: Create PostgreSQL replicator barman user
+#  become_user: postgres
+#  shell: psql postgres -c "CREATE USER replicator_barman WITH REPLICATION PASSWORD 'barman'"
+#  tags:
+#    - postgres-replication-init
+#    - deploy-barman
+#    - deploy
