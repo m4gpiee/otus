@@ -1,6 +1,4 @@
 
-## Lesson43 MYSQL BACKUP
-
 
 
 ### Задача
